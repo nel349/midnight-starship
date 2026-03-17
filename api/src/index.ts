@@ -1,4 +1,5 @@
 import { Contract, ledger, pureCircuits } from '../../contract/src/managed/starship/contract/index';
+import { CompiledContract } from '@midnight-ntwrk/compact-js';
 import { type ContractAddress } from '@midnight-ntwrk/compact-runtime';
 import {
   type LeaderboardState,
@@ -17,6 +18,10 @@ import { map, type Observable } from 'rxjs';
 import { toHex } from '@midnight-ntwrk/midnight-js-utils';
 
 const starshipContractInstance: StarshipContract = new Contract(witnesses);
+const compiledContract = CompiledContract.make(
+  'starship',
+  starshipContractInstance as any,
+) as unknown as CompiledContract.CompiledContract<StarshipContract, StarshipPrivateState, never>;
 
 export interface DeployedStarshipAPI {
   readonly deployedContractAddress: ContractAddress;
@@ -71,9 +76,9 @@ export class StarshipAPI implements DeployedStarshipAPI {
   }
 
   static async deploy(providers: StarshipProviders): Promise<StarshipAPI> {
-    const deployedContract = await deployContract<typeof starshipContractInstance>(providers, {
+    const deployedContract = await deployContract<StarshipContract>(providers, {
+      compiledContract,
       privateStateId: starshipPrivateStateKey,
-      contract: starshipContractInstance,
       initialPrivateState: await StarshipAPI.getPrivateState(providers),
     });
 
@@ -85,8 +90,8 @@ export class StarshipAPI implements DeployedStarshipAPI {
     contractAddress: ContractAddress,
   ): Promise<StarshipAPI> {
     const deployedContract = await findDeployedContract<StarshipContract>(providers, {
+      compiledContract,
       contractAddress,
-      contract: starshipContractInstance,
       privateStateId: starshipPrivateStateKey,
       initialPrivateState: await StarshipAPI.getPrivateState(providers),
     });

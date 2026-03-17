@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import wasm from 'vite-plugin-wasm';
 import topLevelAwait from 'vite-plugin-top-level-await';
+import { nodePolyfills } from 'vite-plugin-node-polyfills';
 
 export default defineConfig({
   cacheDir: './.vite',
@@ -10,7 +11,7 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          wasm: ['@midnight-ntwrk/onchain-runtime'],
+          wasm: ['@midnight-ntwrk/onchain-runtime-v2'],
         },
       },
     },
@@ -21,6 +22,9 @@ export default defineConfig({
     },
   },
   plugins: [
+    nodePolyfills({
+      include: ['crypto', 'buffer', 'stream', 'assert', 'events', 'path', 'fs', 'util'],
+    }),
     wasm(),
     topLevelAwait({
       promiseExportName: '__tla',
@@ -36,9 +40,9 @@ export default defineConfig({
     },
     include: ['@midnight-ntwrk/compact-runtime'],
     exclude: [
-      '@midnight-ntwrk/onchain-runtime',
-      '@midnight-ntwrk/onchain-runtime/midnight_onchain_runtime_wasm_bg.wasm',
-      '@midnight-ntwrk/onchain-runtime/midnight_onchain_runtime_wasm.js',
+      '@midnight-ntwrk/onchain-runtime-v2',
+      '@midnight-ntwrk/onchain-runtime-v2/midnight_onchain_runtime_wasm_bg.wasm',
+      '@midnight-ntwrk/onchain-runtime-v2/midnight_onchain_runtime_wasm.js',
     ],
   },
   resolve: {

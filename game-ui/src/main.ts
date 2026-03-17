@@ -1,10 +1,15 @@
+import { setNetworkId, type NetworkId } from '@midnight-ntwrk/midnight-js-network-id';
 import { initEngine, setCallbacks } from './game/engine';
 import { setLeaderboardData } from './ui/leaderboard';
 import { getWalletClient } from './providers/wallet-connector';
 import { createMidnightProviders } from './providers/midnight-providers';
 import { StarshipAPI, type DeployedStarshipAPI } from '../../api/src/index';
 import { showToast } from './ui/toast';
+import { NETWORK_ID } from './config';
 import type { Subscription } from 'rxjs';
+
+// Set network ID from env before anything else
+setNetworkId(NETWORK_ID as NetworkId);
 
 let api: DeployedStarshipAPI | null = null;
 let stateSub: Subscription | null = null;
