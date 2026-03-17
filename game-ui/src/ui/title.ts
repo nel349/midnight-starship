@@ -228,10 +228,10 @@ export function renderTitle(
   const midnightProgress = timer > 1.2 ? Math.min(1, (timer - 1.2) / 0.8) : 0;
   renderPixelWord(ctx, 'MIDNIGHT', VIRTUAL_WIDTH / 2, midnightY, '#ef4444', midnightProgress, seed, 20);
 
-  // Phase 3: STARSHIP — Galaga cyan
+  // Phase 3: STARSHIP — white
   const starshipY = midnightY + FONT_H * LETTER_SCALE + 8;
   const starshipProgress = timer > 2.0 ? Math.min(1, (timer - 2.0) / 0.8) : 0;
-  renderPixelWord(ctx, 'STARSHIP', VIRTUAL_WIDTH / 2, starshipY, '#22d3ee', starshipProgress, seed, 30);
+  renderPixelWord(ctx, 'STARSHIP', VIRTUAL_WIDTH / 2, starshipY, '#ffffff', starshipProgress, seed, 30);
 }
 
 function renderLogo(
@@ -249,7 +249,7 @@ function renderLogo(
       if (LOGO[row][col] === 1) {
         const threshold = ((row * 131 + col * 997) % 100) / 100;
         if (progress >= threshold) {
-          ctx.fillStyle = '#22d3ee';
+          ctx.fillStyle = '#ffffff';
           ctx.fillRect(px, py, LOGO_CELL, LOGO_CELL);
         } else if (progress > 0) {
           const hash = ((row * 131 + col * 997 + seed * 7919) % 65537) / 65537;
