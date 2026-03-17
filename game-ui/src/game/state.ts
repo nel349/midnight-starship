@@ -2,6 +2,7 @@
 
 export type GameScreen =
   | 'connect'      // Wallet connection screen
+  | 'deploying'    // Contract deploying / joining — waiting for chain
   | 'menu'         // Title screen
   | 'playing'      // Active gameplay
   | 'gameover'     // Death screen — prompt to submit score
@@ -10,6 +11,7 @@ export type GameScreen =
 
 let currentScreen: GameScreen = 'connect';
 let screenTransitionTimer = 0;
+let deployStatus = '';
 
 export function getScreen(): GameScreen {
   return currentScreen;
@@ -26,4 +28,12 @@ export function getScreenTimer(): number {
 
 export function updateScreenTimer(dt: number): void {
   screenTransitionTimer += dt;
+}
+
+export function setDeployStatus(status: string): void {
+  deployStatus = status;
+}
+
+export function getDeployStatus(): string {
+  return deployStatus;
 }

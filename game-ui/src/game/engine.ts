@@ -1,6 +1,6 @@
 import { VIRTUAL_WIDTH, VIRTUAL_HEIGHT, SCALE } from '../config';
 import { initInput, getInput } from './input';
-import { getScreen, setScreen, updateScreenTimer, getScreenTimer } from './state';
+import { getScreen, setScreen, updateScreenTimer, getScreenTimer, getDeployStatus } from './state';
 import {
   initEntities,
   updateEntities,
@@ -70,6 +70,10 @@ function gameLoop(time: number): void {
     case 'connect':
       renderConnectScreen(ctx, getScreenTimer());
       handleConnectInput(input);
+      break;
+
+    case 'deploying':
+      renderDeploying(ctx, getScreenTimer());
       break;
 
     case 'menu':
@@ -147,6 +151,41 @@ function gameLoop(time: number): void {
 }
 
 // ── Screen renderers ──
+
+function renderDeploying(ctx: CanvasRenderingContext2D, timer: number): void {
+  // Title
+  ctx.fillStyle = '#6366f1';
+  ctx.font = '12px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('MIDNIGHT', VIRTUAL_WIDTH / 2, 50);
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '16px monospace';
+  ctx.fillText('STARSHIP', VIRTUAL_WIDTH / 2, 70);
+
+  // Status message
+  const status = getDeployStatus();
+  const dots = '.'.repeat(Math.floor(timer * 2) % 4);
+  ctx.fillStyle = '#6366f1';
+  ctx.font = '6px monospace';
+  ctx.fillText(status + dots, VIRTUAL_WIDTH / 2, 115);
+
+  // Animated loading bar
+  const barWidth = 120;
+  const barX = (VIRTUAL_WIDTH - barWidth) / 2;
+  const barY = 130;
+  ctx.fillStyle = '#1e293b';
+  ctx.fillRect(barX, barY, barWidth, 4);
+  const progress = ((Math.sin(timer * 2) + 1) / 2) * barWidth;
+  ctx.fillStyle = '#6366f1';
+  ctx.fillRect(barX, barY, progress, 4);
+
+  // Info
+  ctx.fillStyle = '#334155';
+  ctx.font = '4px monospace';
+  ctx.fillText('This may take a moment — proving & balancing the deploy tx', VIRTUAL_WIDTH / 2, 155);
+  ctx.fillText('Check your wallet terminal for approval prompts', VIRTUAL_WIDTH / 2, 165);
+}
 
 function renderMenu(ctx: CanvasRenderingContext2D, timer: number): void {
   // Title

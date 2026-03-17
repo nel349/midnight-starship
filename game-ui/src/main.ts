@@ -17,6 +17,7 @@ import { createMidnightProviders } from './providers/midnight-providers';
 import { StarshipAPI, type DeployedStarshipAPI } from '../../api/src/index';
 import { showToast } from './ui/toast';
 import { NETWORK_ID } from './config';
+import { setScreen, setDeployStatus } from './game/state';
 import type { Subscription } from 'rxjs';
 
 // Set network ID from env before anything else
@@ -30,19 +31,21 @@ async function initializeAPI(): Promise<void> {
   if (!wallet) return;
 
   try {
+    setDeployStatus('Setting up providers...');
     const providers = await createMidnightProviders(wallet);
 
     // Check for existing contract address in URL hash
     const hash = window.location.hash.slice(1);
     if (hash) {
-      showToast('Joining existing contract...', 'info');
+      setDeployStatus('Joining existing contract...');
       api = await StarshipAPI.join(providers, hash);
     } else {
-      showToast('Deploying new contract...', 'info');
+      setDeployStatus('Deploying contract — approve in terminal...');
       api = await StarshipAPI.deploy(providers);
       window.location.hash = api.deployedContractAddress;
     }
 
+    setDeployStatus('Contract ready!');
     showToast(`Contract: ${api.deployedContractAddress.slice(0, 12)}...`, 'success');
 
     // Subscribe to leaderboard state
@@ -64,9 +67,15 @@ async function initializeAPI(): Promise<void> {
         showToast(`Proved elite status (score >= ${threshold})!`, 'success');
       },
     });
+
+    // Contract is ready — go to menu
+    setScreen('menu');
   } catch (err) {
     console.error('API initialization failed:', err);
+    setDeployStatus('Setup failed — playing offline');
     showToast('Contract setup failed — playing offline', 'error');
+    // Still let them play without on-chain features
+    setTimeout(() => setScreen('menu'), 2000);
   }
 }
 

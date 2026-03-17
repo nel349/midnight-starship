@@ -70,7 +70,7 @@ export function handleConnectInput(input: InputState): void {
       .then(() => {
         connecting = false;
         showToast('Wallet connected!', 'success');
-        setScreen('menu');
+        setScreen('deploying');
       })
       .catch((err) => {
         connecting = false;
