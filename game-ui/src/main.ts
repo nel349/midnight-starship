@@ -1,3 +1,14 @@
+// Polyfill crypto.timingSafeEqual — not provided by crypto-browserify
+import crypto from 'crypto';
+if (typeof crypto.timingSafeEqual !== 'function') {
+  (crypto as any).timingSafeEqual = (a: Uint8Array, b: Uint8Array): boolean => {
+    if (a.length !== b.length) throw new RangeError('Input buffers must have the same byte length');
+    let result = 0;
+    for (let i = 0; i < a.length; i++) result |= a[i] ^ b[i];
+    return result === 0;
+  };
+}
+
 import { setNetworkId, type NetworkId } from '@midnight-ntwrk/midnight-js-network-id';
 import { initEngine, setCallbacks } from './game/engine';
 import { setLeaderboardData } from './ui/leaderboard';

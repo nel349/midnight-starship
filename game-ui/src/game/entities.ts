@@ -1,4 +1,5 @@
 import { VIRTUAL_WIDTH, VIRTUAL_HEIGHT } from '../config';
+import { playEnemyHit, playBossHurt, playBossDeath, playPlayerDeath, playDiving, playLevelStart } from './audio';
 import {
   SHIP,
   ENEMY_BEE,
@@ -293,6 +294,7 @@ export function updateEntities(dt: number): number {
       enemy.diving = true;
       enemy.diveIndex = 0;
       enemy.divePath = generateDivePath(enemy.pos, fighter.pos, enemy.formationPos);
+      playDiving();
     }
   }
 
@@ -344,6 +346,14 @@ export function updateEntities(dt: number): number {
             : SCORE_VALUES[e.type].formation;
           scoreGained += pts;
           spawnExplosion(e.pos, e.type === 'boss' ? 30 : 15);
+          if (e.type === 'boss') {
+            playBossDeath();
+          } else {
+            playEnemyHit();
+          }
+        } else {
+          // Boss took a hit but survived
+          playBossHurt();
         }
         break;
       }
@@ -394,6 +404,7 @@ export function updateEntities(dt: number): number {
     stage++;
     stageTimer = 0;
     spawnWave();
+    playLevelStart();
   }
 
   score += scoreGained;
@@ -405,6 +416,7 @@ function killFighter(): void {
   fighter.lives--;
   fighter.respawnTimer = 2;
   spawnExplosion(fighter.pos, 40);
+  playPlayerDeath();
 }
 
 function spawnExplosion(pos: Vec2, count: number): void {

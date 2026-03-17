@@ -1,7 +1,33 @@
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 import wasm from 'vite-plugin-wasm';
 import topLevelAwait from 'vite-plugin-top-level-await';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
+
+// Inject timingSafeEqual shim into the crypto polyfill
+function cryptoTimingSafeEqualShim(): Plugin {
+  return {
+    name: 'crypto-timing-safe-equal-shim',
+    transform(code, id) {
+      // Patch the crypto-browserify entry to add timingSafeEqual
+      if (id.includes('crypto-browserify') && id.endsWith('index.js')) {
+        const shim = `
+;(function() {
+  var orig = module.exports;
+  if (!orig.timingSafeEqual) {
+    orig.timingSafeEqual = function timingSafeEqual(a, b) {
+      if (a.length !== b.length) throw new RangeError('Input buffers must have the same byte length');
+      var result = 0;
+      for (var i = 0; i < a.length; i++) result |= a[i] ^ b[i];
+      return result === 0;
+    };
+  }
+})();`;
+        return { code: code + shim, map: null };
+      }
+      return null;
+    },
+  };
+}
 
 export default defineConfig({
   cacheDir: './.vite',
@@ -23,8 +49,9 @@ export default defineConfig({
   },
   plugins: [
     nodePolyfills({
-      include: ['crypto', 'buffer', 'stream', 'assert', 'events', 'path', 'fs', 'util'],
+      include: ['crypto', 'buffer', 'stream', 'assert', 'events', 'path', 'fs', 'util', 'vm'],
     }),
+    cryptoTimingSafeEqualShim(),
     wasm(),
     topLevelAwait({
       promiseExportName: '__tla',

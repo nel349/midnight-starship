@@ -1,5 +1,4 @@
-import { Contract, ledger, pureCircuits } from '../../contract/src/managed/starship/contract/index';
-import { CompiledContract } from '@midnight-ntwrk/compact-js';
+import { ledger } from '../../contract/src/managed/starship/contract/index';
 import { type ContractAddress } from '@midnight-ntwrk/compact-runtime';
 import {
   type LeaderboardState,
@@ -11,17 +10,11 @@ import {
 import {
   type StarshipPrivateState,
   createStarshipPrivateState,
-  witnesses,
+  compiledStarshipContract,
 } from '../../contract/src/index';
 import { deployContract, findDeployedContract } from '@midnight-ntwrk/midnight-js-contracts';
 import { map, type Observable } from 'rxjs';
 import { toHex } from '@midnight-ntwrk/midnight-js-utils';
-
-const starshipContractInstance: StarshipContract = new Contract(witnesses);
-const compiledContract = CompiledContract.make(
-  'starship',
-  starshipContractInstance as any,
-) as unknown as CompiledContract.CompiledContract<StarshipContract, StarshipPrivateState, never>;
 
 export interface DeployedStarshipAPI {
   readonly deployedContractAddress: ContractAddress;
@@ -77,9 +70,9 @@ export class StarshipAPI implements DeployedStarshipAPI {
 
   static async deploy(providers: StarshipProviders): Promise<StarshipAPI> {
     const deployedContract = await deployContract<StarshipContract>(providers, {
-      compiledContract,
+      compiledContract: compiledStarshipContract as any,
       privateStateId: starshipPrivateStateKey,
-      initialPrivateState: await StarshipAPI.getPrivateState(providers),
+      initialPrivateState: StarshipAPI.createFreshPrivateState(),
     });
 
     return new StarshipAPI(deployedContract, providers);
@@ -90,21 +83,16 @@ export class StarshipAPI implements DeployedStarshipAPI {
     contractAddress: ContractAddress,
   ): Promise<StarshipAPI> {
     const deployedContract = await findDeployedContract<StarshipContract>(providers, {
-      compiledContract,
+      compiledContract: compiledStarshipContract as any,
       contractAddress,
       privateStateId: starshipPrivateStateKey,
-      initialPrivateState: await StarshipAPI.getPrivateState(providers),
+      initialPrivateState: StarshipAPI.createFreshPrivateState(),
     });
 
     return new StarshipAPI(deployedContract, providers);
   }
 
-  private static async getPrivateState(
-    providers: StarshipProviders,
-  ): Promise<StarshipPrivateState> {
-    const existingState = await providers.privateStateProvider.get(starshipPrivateStateKey);
-    if (existingState) return existingState;
-
+  private static createFreshPrivateState(): StarshipPrivateState {
     const randomBytes = new Uint8Array(32);
     crypto.getRandomValues(randomBytes);
     return createStarshipPrivateState(randomBytes);

@@ -16,6 +16,7 @@ import { renderHud } from '../ui/hud';
 import { renderConnectScreen, handleConnectInput } from '../ui/connect-screen';
 import { renderLeaderboard, handleLeaderboardInput } from '../ui/leaderboard';
 import { getWalletClient } from '../providers/wallet-connector';
+import { initAudio, playShoot, playMenuSelect, playLevelStart, playScoreSubmit, startTheme, stopTheme } from './audio';
 
 let canvas: HTMLCanvasElement;
 let ctx: CanvasRenderingContext2D;
@@ -44,6 +45,7 @@ export function initEngine(): void {
   ctx.imageSmoothingEnabled = false;
 
   initInput();
+  initAudio();
   lastTime = performance.now();
   requestAnimationFrame(gameLoop);
 }
@@ -73,7 +75,10 @@ function gameLoop(time: number): void {
     case 'menu':
       renderMenu(ctx, getScreenTimer());
       if (input.enter) {
+        playMenuSelect();
         initEntities();
+        startTheme();
+        playLevelStart();
         setScreen('playing');
       }
       break;
@@ -81,7 +86,7 @@ function gameLoop(time: number): void {
     case 'playing':
       if (input.left) moveShip(-1, dt);
       if (input.right) moveShip(1, dt);
-      if (input.fire) firePlayerTorpedo();
+      if (input.fire && firePlayerTorpedo()) playShoot();
 
       updateEntities(dt);
       renderEntities(ctx);
@@ -90,6 +95,7 @@ function gameLoop(time: number): void {
       // Check game over
       if (fighter.lives <= 0 && !fighter.alive) {
         finalScore = score;
+        stopTheme();
         setScreen('gameover');
       }
       break;
@@ -98,10 +104,11 @@ function gameLoop(time: number): void {
       renderEntities(ctx); // keep showing the field
       renderGameOver(ctx, finalScore, getScreenTimer());
       if (input.enter && getScreenTimer() > 0.5) {
+        playMenuSelect();
         if (onSubmitScore) {
           setScreen('submitting');
           onSubmitScore(BigInt(finalScore), playerAlias)
-            .then(() => setScreen('leaderboard'))
+            .then(() => { playScoreSubmit(); setScreen('leaderboard'); })
             .catch((err) => {
               console.error('Score submission failed:', err);
               setScreen('leaderboard');
@@ -122,6 +129,8 @@ function gameLoop(time: number): void {
       handleLeaderboardInput(input, {
         onPlayAgain: () => {
           initEntities();
+          startTheme();
+          playLevelStart();
           setScreen('playing');
         },
         onProveElite: onProveElite
