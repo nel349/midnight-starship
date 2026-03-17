@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "midnight-mcp": {
+      "command": "npx",
+      "args": ["-y", "@midnight-ntwrk/midnight-mcp"]
+    },
+    "midnight-wallet": {
+      "command": "midnight-wallet-mcp"
+    }
+  }
+}

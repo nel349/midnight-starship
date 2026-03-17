@@ -1,0 +1,35 @@
+pragma language_version >= 0.20;
+
+import CompactStandardLibrary;
+
+export ledger scores: Map<Bytes<32>, Uint<64>>;
+export ledger aliases: Map<Bytes<32>, Opaque<"string">>;
+export ledger topScore: Uint<64>;
+export ledger entryCount: Counter;
+
+witness localSecretKey(): Bytes<32>;
+
+// Derive privacy-preserving identity from secret key
+export circuit playerHash(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "starship:pk:"), sk]);
+}
+
+// Submit score — identity is hashed, score is public
+export circuit submit_score(score: Uint<64>, alias: Opaque<"string">): [] {
+  const sk = localSecretKey();
+  const ph = disclose(playerHash(sk));
+  const disclosed_score = disclose(score);
+  scores.insert(ph, disclosed_score);
+  aliases.insert(ph, disclose(alias));
+  entryCount.increment(1);
+  if (disclosed_score > topScore) { topScore = disclosed_score; }
+}
+
+// Selective disclosure — prove score above threshold without revealing exact score
+export circuit prove_elite(threshold: Uint<64>): [] {
+  const sk = localSecretKey();
+  const ph = disclose(playerHash(sk));
+  assert(scores.member(ph), "No score found");
+  const my_score = scores.lookup(ph);
+  assert(my_score >= disclose(threshold), "Below threshold");
+}

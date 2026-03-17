@@ -1,0 +1,15 @@
+{
+  "name": "@midnight-starship/game-ui",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "rm -rf ./dist && tsc && vite build && cp -r ../contract/src/managed/starship/keys ./dist/keys && cp -r ../contract/src/managed/starship/zkir ./dist/zkir",
+    "preview": "vite preview",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}
