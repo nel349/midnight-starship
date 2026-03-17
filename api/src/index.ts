@@ -42,8 +42,8 @@ export interface DeployedStarshipAPI {
    * @param alias - The player's display name.
    *
    * @remarks
-   * The player's identity is derived from their secret key via `persistentHash`,
-   * so it is never disclosed. The score and alias are publicly visible on the ledger.
+   * Only a commitment hash is stored on-chain. The actual score is kept
+   * in private state. The alias is publicly visible.
    */
   submitScore: (score: bigint, alias: string) => Promise<void>;
 
@@ -54,6 +54,12 @@ export interface DeployedStarshipAPI {
    * @param threshold - The minimum score to prove.
    */
   proveElite: (threshold: bigint) => Promise<void>;
+
+  /**
+   * Voluntarily reveals the player's actual score on-chain.
+   * Once revealed, the score is publicly visible on the leaderboard.
+   */
+  revealScore: () => Promise<void>;
 }
 
 /**
@@ -90,6 +96,11 @@ export class StarshipAPI implements DeployedStarshipAPI {
   /** @inheritdoc */
   async proveElite(threshold: bigint): Promise<void> {
     await this.deployedContract.callTx.prove_elite(threshold);
+  }
+
+  /** @inheritdoc */
+  async revealScore(): Promise<void> {
+    await this.deployedContract.callTx.reveal_score();
   }
 
   /**
@@ -133,11 +144,6 @@ export class StarshipAPI implements DeployedStarshipAPI {
 /**
  * Generates a fresh private state with a random 32-byte secret key.
  *
- * @remarks
- * Each player gets a unique secret key that is never disclosed on-chain.
- * The key is hashed via `persistentHash` to derive a privacy-preserving
- * player identity used in the leaderboard's `scores` and `aliases` maps.
- *
  * @internal
  */
 function generatePrivateState(): StarshipPrivateState {
@@ -149,8 +155,9 @@ function generatePrivateState(): StarshipPrivateState {
 /**
  * Derives a {@link LeaderboardState} from raw on-chain contract state.
  *
- * @param data - The raw contract state from the public data provider.
- * @returns The leaderboard entries sorted by score descending.
+ * Iterates `scoreCommitments` to find all players, checks `revealedScores`
+ * for voluntary disclosures, and pulls aliases. Revealed entries sort first
+ * (by score descending), followed by hidden entries (alphabetically by alias).
  *
  * @internal
  */
@@ -158,15 +165,26 @@ function deriveLeaderboardState(data: Parameters<typeof ledger>[0]): Leaderboard
   const state = ledger(data);
   const entries: LeaderboardState['entries'] = [];
 
-  for (const [keyBytes, score] of state.scores) {
+  for (const [keyBytes] of state.scoreCommitments) {
     const playerHash = toHex(keyBytes);
     const alias = state.aliases.member(keyBytes)
       ? state.aliases.lookup(keyBytes)
       : 'Anonymous';
-    entries.push({ playerHash, alias, score });
+    const revealedScore = state.revealedScores.member(keyBytes)
+      ? state.revealedScores.lookup(keyBytes)
+      : null;
+    entries.push({ playerHash, alias, hasCommitment: true, revealedScore });
   }
 
-  entries.sort((a, b) => (b.score > a.score ? 1 : b.score < a.score ? -1 : 0));
+  // Revealed first (by score desc), then hidden (alphabetically by alias)
+  entries.sort((a, b) => {
+    if (a.revealedScore !== null && b.revealedScore !== null) {
+      return b.revealedScore > a.revealedScore ? 1 : b.revealedScore < a.revealedScore ? -1 : 0;
+    }
+    if (a.revealedScore !== null) return -1;
+    if (b.revealedScore !== null) return 1;
+    return a.alias.localeCompare(b.alias);
+  });
 
   return {
     entries,

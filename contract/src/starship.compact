@@ -2,45 +2,75 @@
 //
 // On-chain leaderboard for the Midnight Starship game.
 // Demonstrates three key privacy patterns:
-//   1. Identity privacy  — player identity is a hash of a secret key, never disclosed directly
-//   2. Public scores     — scores are disclosed so the leaderboard is publicly readable
-//   3. Selective disclosure — prove_elite lets a player prove "my score >= X" via ZK proof
-//                            without revealing their exact score
+//   1. Identity privacy     — player identity is a hash of a secret key, never disclosed
+//   2. Private scores       — scores stored as commitment hashes, actual values off-chain
+//   3. Selective disclosure  — prove_elite proves "my score >= X" via ZK proof
+//   4. Voluntary reveal     — reveal_score lets a player optionally publish their score
 
 pragma language_version >= 0.20;
 
 import CompactStandardLibrary;
 
-// Ledger state — all publicly readable on-chain
-export ledger scores: Map<Bytes<32>, Uint<64>>;       // playerHash → score
-export ledger aliases: Map<Bytes<32>, Opaque<"string">>; // playerHash → display name
-export ledger topScore: Uint<64>;                      // highest score ever submitted
-export ledger entryCount: Counter;                     // total submissions
+// ── Ledger state ──
 
-// Witness — provides the player's secret key from off-chain private state
+export ledger scoreCommitments: Map<Bytes<32>, Bytes<32>>;   // playerHash → hash(ph, score)
+export ledger revealedScores: Map<Bytes<32>, Uint<64>>;      // playerHash → score (voluntary)
+export ledger aliases: Map<Bytes<32>, Opaque<"string">>;     // playerHash → display name
+export ledger topScore: Uint<64>;                             // highest *revealed* score
+export ledger entryCount: Counter;                            // total submissions
+
+// ── Witnesses — private state access ──
+
 witness localSecretKey(): Bytes<32>;
+witness storeScore(score: Uint<64>): [];
+witness getStoredScore(): Uint<64>;
+
+// ── Pure circuits ──
 
 // Derive a privacy-preserving player identity from a secret key
 export circuit playerHash(sk: Bytes<32>): Bytes<32> {
   return persistentHash<Vector<2, Bytes<32>>>([pad(32, "starship:pk:"), sk]);
 }
 
-// Submit score — identity is hashed, score is public
+// Compute a binding commitment for a score tied to a player identity
+circuit scoreCommitment(ph: Bytes<32>, score: Uint<64>): Bytes<32> {
+  return persistentHash<Vector<3, Bytes<32>>>([pad(32, "starship:sc:"), ph, score as Field as Bytes<32>]);
+}
+
+// ── Impure circuits ──
+
+// Submit score — stores commitment on-chain, actual score in private state
 export circuit submit_score(score: Uint<64>, alias: Opaque<"string">): [] {
   const sk = localSecretKey();
   const ph = disclose(playerHash(sk));
-  const disclosed_score = disclose(score);
-  scores.insert(ph, disclosed_score);
+  const commitment = scoreCommitment(ph, score);
+  scoreCommitments.insert(ph, disclose(commitment));
   aliases.insert(ph, disclose(alias));
+  storeScore(score);
   entryCount.increment(1);
-  if (disclosed_score > topScore) { topScore = disclosed_score; }
 }
 
-// Selective disclosure — prove score above threshold without revealing exact score
+// Selective disclosure — prove score >= threshold via ZK proof
+// Score comes from private state; commitment is verified against ledger
 export circuit prove_elite(threshold: Uint<64>): [] {
   const sk = localSecretKey();
   const ph = disclose(playerHash(sk));
-  assert(scores.member(ph), "No score found");
-  const my_score = scores.lookup(ph);
+  assert(scoreCommitments.member(ph), "No score found");
+  const my_score = getStoredScore();
+  const expected = scoreCommitment(ph, my_score);
+  assert(scoreCommitments.lookup(ph) == expected, "Score commitment mismatch");
   assert(my_score >= disclose(threshold), "Below threshold");
+}
+
+// Voluntary reveal — disclose actual score publicly
+export circuit reveal_score(): [] {
+  const sk = localSecretKey();
+  const ph = disclose(playerHash(sk));
+  assert(scoreCommitments.member(ph), "No score found");
+  const my_score = getStoredScore();
+  const expected = scoreCommitment(ph, my_score);
+  assert(scoreCommitments.lookup(ph) == expected, "Score commitment mismatch");
+  const disclosed_score = disclose(my_score);
+  revealedScores.insert(ph, disclosed_score);
+  if (disclosed_score > topScore) { topScore = disclosed_score; }
 }

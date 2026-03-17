@@ -7,6 +7,7 @@ export type InputState = {
   enter: boolean;
   escape: boolean;
   prove: boolean;
+  reveal: boolean;
   backspace: boolean;
 };
 
@@ -14,6 +15,7 @@ const keys: Set<string> = new Set();
 let firePressed = false;
 let enterPressed = false;
 let provePressed = false;
+let revealPressed = false;
 
 // Text input buffer for alias entry
 let textBuffer = '';
@@ -43,6 +45,7 @@ export function initInput(): void {
     if (e.key === ' ' || e.key === 'ArrowUp') firePressed = false;
     if (e.key === 'Enter') enterPressed = false;
     if (e.key === 'p' || e.key === 'P') provePressed = false;
+    if (e.key === 'r' || e.key === 'R') revealPressed = false;
   });
 }
 
@@ -50,10 +53,12 @@ export function getInput(): InputState {
   const fire = !firePressed && (keys.has(' ') || keys.has('ArrowUp'));
   const enter = !enterPressed && keys.has('Enter');
   const prove = !provePressed && (keys.has('p') || keys.has('P'));
+  const reveal = !revealPressed && (keys.has('r') || keys.has('R'));
 
   if (fire) firePressed = true;
   if (enter) enterPressed = true;
   if (prove) provePressed = true;
+  if (reveal) revealPressed = true;
 
   return {
     left: keys.has('ArrowLeft') || keys.has('a'),
@@ -62,6 +67,7 @@ export function getInput(): InputState {
     enter,
     escape: keys.has('Escape'),
     prove,
+    reveal,
     backspace: keys.has('Backspace'),
   };
 }

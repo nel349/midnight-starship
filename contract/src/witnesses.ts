@@ -1,46 +1,27 @@
 /*
- * This file defines the shape of the Starship leaderboard's private state,
- * as well as the single witness function that accesses it.
+ * Starship leaderboard private state and witness implementations.
+ *
+ * Private state holds:
+ *   - secretKey: player identity (never disclosed on-chain)
+ *   - score: the player's actual score (stored off-chain, committed on-chain as hash)
  */
 
 import { type Ledger } from './managed/starship/contract/index';
 import { type WitnessContext } from '@midnight-ntwrk/compact-runtime';
 
-/* **********************************************************************
- * The only hidden state needed by the Starship contract is the user's
- * secret key. This key is never disclosed on-chain — instead, it is
- * hashed via `persistentHash` to produce a privacy-preserving player
- * identity (see `playerHash` in the Compact contract).
- *
- * Some of the library code and compiler-generated code is parameterized
- * by the type of our private state, so we define a type for it and a
- * factory function to create an instance.
- */
-
 export type StarshipPrivateState = {
   readonly secretKey: Uint8Array;
+  readonly score: bigint | null;
 };
 
-export const createStarshipPrivateState = (secretKey: Uint8Array): StarshipPrivateState => ({
+export const createStarshipPrivateState = (
+  secretKey: Uint8Array,
+  score: bigint | null = null,
+): StarshipPrivateState => ({
   secretKey,
+  score,
 });
 
-/* **********************************************************************
- * The witnesses object maps each witness function declared in the
- * Compact contract to its TypeScript implementation.
- *
- * Each witness function receives a `WitnessContext<L, PS>` as its first
- * argument, where:
- *   - `ledger: L`          — the current ledger state
- *   - `privateState: PS`   — the current private state
- *   - `contractAddress: string`
- *
- * The return value is a tuple of `[newPrivateState, returnValue]`.
- *
- * `localSecretKey` simply returns the existing secret key without
- * modifying the private state. It does not need the ledger or contract
- * address, so it destructures only `privateState`.
- */
 export const witnesses = {
   localSecretKey: ({
     privateState,
@@ -48,4 +29,21 @@ export const witnesses = {
     privateState,
     privateState.secretKey,
   ],
+
+  storeScore: (
+    { privateState }: WitnessContext<Ledger, StarshipPrivateState>,
+    score: bigint,
+  ): [StarshipPrivateState, []] => [
+    { ...privateState, score },
+    [],
+  ],
+
+  getStoredScore: ({
+    privateState,
+  }: WitnessContext<Ledger, StarshipPrivateState>): [StarshipPrivateState, bigint] => {
+    if (privateState.score === null) {
+      throw new Error('No score stored in private state');
+    }
+    return [privateState, privateState.score];
+  },
 };

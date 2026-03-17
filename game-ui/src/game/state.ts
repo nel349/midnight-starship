@@ -8,6 +8,7 @@ export type GameScreen =
   | 'gameover'     // Death screen — enter alias
   | 'submitting'   // Submitting score to chain
   | 'proving'      // Proving elite status (ZK proof in progress)
+  | 'revealing'    // Revealing score on-chain (voluntary disclosure)
   | 'leaderboard'; // Viewing on-chain leaderboard
 
 let currentScreen: GameScreen = 'connect';

@@ -50,7 +50,7 @@ async function initializeAPI(): Promise<void> {
 
     // Subscribe to leaderboard state
     stateSub = api.state$.subscribe({
-      next: (state: { entries: { playerHash: string; alias: string; score: bigint }[]; topScore: bigint }) => setLeaderboardData(state),
+      next: (state) => setLeaderboardData(state),
       error: (err: unknown) => console.error('State subscription error:', err),
     });
 
@@ -59,12 +59,17 @@ async function initializeAPI(): Promise<void> {
       submitScore: async (score, alias) => {
         if (!api) throw new Error('API not initialized');
         await api.submitScore(score, alias);
-        showToast('Score submitted on-chain!', 'success');
+        showToast('Score committed on-chain (hidden)!', 'success');
       },
       proveElite: async (threshold) => {
         if (!api) throw new Error('API not initialized');
         await api.proveElite(threshold);
         showToast(`Proved elite status (score >= ${threshold})!`, 'success');
+      },
+      revealScore: async () => {
+        if (!api) throw new Error('API not initialized');
+        await api.revealScore();
+        showToast('Score revealed on-chain!', 'success');
       },
     });
 

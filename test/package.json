@@ -1,0 +1,36 @@
+{
+  "name": "@midnight-starship/test",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "build": "echo 'no build needed for tests'"
+  },
+  "dependencies": {
+    "@midnight-ntwrk/compact-runtime": "0.14.0",
+    "@midnight-ntwrk/ledger-v7": "^7.0.0",
+    "@midnight-ntwrk/midnight-js-contracts": "^3.2.0",
+    "@midnight-ntwrk/midnight-js-node-zk-config-provider": "^3.2.0",
+    "@midnight-ntwrk/midnight-js-types": "^3.2.0",
+    "@midnight-ntwrk/midnight-js-utils": "^3.2.0",
+    "@midnight-ntwrk/testkit-js": "3.2.1-0-pre.e5e52f1",
+    "@midnight-ntwrk/wallet-sdk-abstractions": "^2.0.0",
+    "@midnight-ntwrk/wallet-sdk-dust-wallet": "^2.0.0",
+    "@midnight-ntwrk/wallet-sdk-facade": "^2.0.0",
+    "@midnight-ntwrk/wallet-sdk-hd": "^3.0.1",
+    "@midnight-ntwrk/wallet-sdk-unshielded-wallet": "^2.0.0",
+    "axios": "^1.13.6",
+    "rxjs": "^7.8.2",
+    "testcontainers": "^11.13.0",
+    "ws": "^8.19.0"
+  },
+  "devDependencies": {
+    "pino": "^10.0.0",
+    "pino-pretty": "^13.0.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.0"
+  }
+}

@@ -63,23 +63,28 @@ export type DeployedStarshipContract = FoundContract<StarshipContract>;
 
 /**
  * A single entry on the on-chain leaderboard.
+ *
+ * Scores are private by default — only a commitment hash is stored on-chain.
+ * Players may optionally reveal their score via `reveal_score`.
  */
 export type LeaderboardEntry = {
   /** Privacy-preserving player identity (hex-encoded hash of secret key). */
   readonly playerHash: string;
   /** Player-chosen display name. */
   readonly alias: string;
-  /** Player's score. */
-  readonly score: bigint;
+  /** Whether this player has a score commitment on-chain. */
+  readonly hasCommitment: boolean;
+  /** The player's score, or null if not yet revealed. */
+  readonly revealedScore: bigint | null;
 };
 
 /**
  * Derived leaderboard state combining all on-chain score data.
  */
 export type LeaderboardState = {
-  /** All leaderboard entries, sorted by score descending. */
+  /** All leaderboard entries — revealed first (by score desc), then hidden (alpha). */
   readonly entries: LeaderboardEntry[];
-  /** The highest score ever submitted. */
+  /** The highest *revealed* score. */
   readonly topScore: bigint;
   /** Total number of score submissions. */
   readonly entryCount: bigint;

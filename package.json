@@ -10,7 +10,8 @@
   "workspaces": [
     "contract",
     "api",
-    "game-ui"
+    "game-ui",
+    "test"
   ],
   "dependencies": {
     "@midnight-ntwrk/compact-runtime": "0.14.0",
@@ -28,6 +29,9 @@
     "@midnight-ntwrk/zswap": "^4.0.0",
     "midnight-wallet-connector": "^0.0.1",
     "rxjs": "^7.8.2"
+  },
+  "overrides": {
+    "@midnight-ntwrk/ledger-v7": "7.0.3"
   },
   "devDependencies": {
     "typescript": "^5.9.3",

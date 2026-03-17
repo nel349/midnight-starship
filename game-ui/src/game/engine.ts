@@ -27,13 +27,16 @@ let playerAlias = '';
 // Callbacks set by main.ts after providers are ready
 let onSubmitScore: ((score: bigint, alias: string) => Promise<void>) | null = null;
 let onProveElite: ((threshold: bigint) => Promise<void>) | null = null;
+let onRevealScore: (() => Promise<void>) | null = null;
 
 export function setCallbacks(callbacks: {
   submitScore?: (score: bigint, alias: string) => Promise<void>;
   proveElite?: (threshold: bigint) => Promise<void>;
+  revealScore?: () => Promise<void>;
 }): void {
   if (callbacks.submitScore) onSubmitScore = callbacks.submitScore;
   if (callbacks.proveElite) onProveElite = callbacks.proveElite;
+  if (callbacks.revealScore) onRevealScore = callbacks.revealScore;
 }
 
 export function initEngine(): void {
@@ -141,6 +144,10 @@ function gameLoop(time: number): void {
       renderProving(ctx, getScreenTimer());
       break;
 
+    case 'revealing':
+      renderRevealing(ctx, getScreenTimer());
+      break;
+
     case 'leaderboard':
       renderLeaderboard(ctx, getScreenTimer(), dt);
       handleLeaderboardInput(input, {
@@ -168,6 +175,27 @@ function gameLoop(time: number): void {
                     showBanner('No score on-chain — play first', 'error');
                   } else {
                     showBanner('Proof failed', 'error');
+                  }
+                  setScreen('leaderboard');
+                });
+            }
+          : undefined,
+        onRevealScore: onRevealScore
+          ? () => {
+              setScreen('revealing');
+              onRevealScore!()
+                .then(() => {
+                  playScoreSubmit();
+                  showBanner('SCORE REVEALED ON-CHAIN!', 'success');
+                  setScreen('leaderboard');
+                })
+                .catch((err: unknown) => {
+                  console.error('Reveal score failed:', err);
+                  const msg = err instanceof Error ? err.message : String(err);
+                  if (msg.includes('No score found')) {
+                    showBanner('No score on-chain — play first', 'error');
+                  } else {
+                    showBanner('Reveal failed', 'error');
                   }
                   setScreen('leaderboard');
                 });
@@ -311,6 +339,30 @@ function renderProving(ctx: CanvasRenderingContext2D, timer: number): void {
   ctx.font = '5px monospace';
   ctx.fillText('Proving: "my score >= threshold"', VIRTUAL_WIDTH / 2, 140);
   ctx.fillText('without revealing the exact score', VIRTUAL_WIDTH / 2, 152);
+
+  ctx.fillStyle = '#334155';
+  ctx.font = '4px monospace';
+  ctx.fillText('Approve in your wallet terminal', VIRTUAL_WIDTH / 2, 175);
+}
+
+function renderRevealing(ctx: CanvasRenderingContext2D, timer: number): void {
+  ctx.fillStyle = '#000008';
+  ctx.fillRect(0, 0, VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
+
+  ctx.fillStyle = '#f59e0b';
+  ctx.font = '8px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('REVEALING SCORE', VIRTUAL_WIDTH / 2, 90);
+
+  const dots = '.'.repeat(Math.floor(timer * 3) % 4);
+  ctx.fillStyle = '#64748b';
+  ctx.font = '6px monospace';
+  ctx.fillText(`Publishing your score on-chain${dots}`, VIRTUAL_WIDTH / 2, 115);
+
+  ctx.fillStyle = '#334155';
+  ctx.font = '5px monospace';
+  ctx.fillText('Your hidden score will become public', VIRTUAL_WIDTH / 2, 140);
+  ctx.fillText('on the leaderboard for all to see', VIRTUAL_WIDTH / 2, 152);
 
   ctx.fillStyle = '#334155';
   ctx.font = '4px monospace';

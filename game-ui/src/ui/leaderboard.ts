@@ -45,7 +45,7 @@ export function renderLeaderboard(
   ctx.fillText('RANK', 20, 42);
   ctx.fillText('PILOT', 55, 42);
   ctx.textAlign = 'right';
-  ctx.fillText('SCORE', VIRTUAL_WIDTH - 20, 42);
+  ctx.fillText('STATUS', VIRTUAL_WIDTH - 20, 42);
 
   // Divider
   ctx.fillStyle = '#1e293b';
@@ -69,9 +69,15 @@ export function renderLeaderboard(
     const alias = entry.alias.length > 12 ? entry.alias.slice(0, 12) + '..' : entry.alias;
     ctx.fillText(alias, 55, y);
 
+    // Status column — show revealed score or "HIDDEN"
     ctx.textAlign = 'right';
-    ctx.fillStyle = '#22c55e';
-    ctx.fillText(entry.score.toString(), VIRTUAL_WIDTH - 20, y);
+    if (entry.revealedScore !== null) {
+      ctx.fillStyle = '#22c55e';
+      ctx.fillText(entry.revealedScore.toString(), VIRTUAL_WIDTH - 20, y);
+    } else {
+      ctx.fillStyle = '#334155';
+      ctx.fillText('HIDDEN', VIRTUAL_WIDTH - 20, y);
+    }
   }
 
   if (entries.length === 0) {
@@ -82,12 +88,12 @@ export function renderLeaderboard(
     ctx.fillText('Be the first pilot!', VIRTUAL_WIDTH / 2, 92);
   }
 
-  // Top score banner
+  // Top revealed score banner
   if (topScore > 0n) {
     ctx.fillStyle = '#6366f1';
     ctx.font = '5px monospace';
     ctx.textAlign = 'center';
-    ctx.fillText(`TOP SCORE: ${topScore}`, VIRTUAL_WIDTH / 2, 190);
+    ctx.fillText(`TOP REVEALED SCORE: ${topScore}`, VIRTUAL_WIDTH / 2, 185);
   }
 
   // Threshold input overlay
@@ -118,20 +124,24 @@ export function renderLeaderboard(
     ctx.fillStyle = '#22c55e';
     ctx.font = '6px monospace';
     ctx.textAlign = 'center';
-    ctx.fillText('ENTER = PLAY AGAIN', VIRTUAL_WIDTH / 2, 210);
+    ctx.fillText('ENTER = PLAY AGAIN', VIRTUAL_WIDTH / 2, 205);
   }
 
   ctx.fillStyle = '#8b5cf6';
   ctx.font = '5px monospace';
   ctx.textAlign = 'center';
-  ctx.fillText('P = PROVE ELITE (ZK proof: score >= threshold)', VIRTUAL_WIDTH / 2, 225);
+  ctx.fillText('P = PROVE ELITE (ZK proof: score >= threshold)', VIRTUAL_WIDTH / 2, 218);
+
+  ctx.fillStyle = '#f59e0b';
+  ctx.font = '5px monospace';
+  ctx.fillText('R = REVEAL YOUR SCORE', VIRTUAL_WIDTH / 2, 228);
 
   // On-canvas banner notification
   if (bannerTimer > 0) {
     bannerTimer -= dt;
     const alpha = bannerTimer > 0.5 ? 1 : bannerTimer * 2;
     const bgColor = bannerType === 'success' ? 'rgba(34, 197, 94, 0.9)' : 'rgba(239, 68, 68, 0.9)';
-    const bannerY = 195;
+    const bannerY = 190;
     const bannerH = 16;
 
     ctx.globalAlpha = alpha;
@@ -151,6 +161,7 @@ export function handleLeaderboardInput(
   callbacks: {
     onPlayAgain: () => void;
     onProveElite?: (threshold: bigint) => void;
+    onRevealScore?: () => void;
   },
 ): void {
   if (enteringThreshold) {
@@ -177,6 +188,10 @@ export function handleLeaderboardInput(
     enteringThreshold = true;
     thresholdBuffer = '';
     installThresholdListener();
+  }
+
+  if (input.reveal && callbacks.onRevealScore) {
+    callbacks.onRevealScore();
   }
 }
 
