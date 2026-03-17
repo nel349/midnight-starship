@@ -133,9 +133,6 @@ export function initEntities(): void {
   spawnWave();
 }
 
-export function resetScore(): void {
-  score = 0;
-}
 
 // ── Wave spawning ──
 

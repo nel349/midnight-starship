@@ -5,8 +5,9 @@ export type GameScreen =
   | 'deploying'    // Contract deploying / joining — waiting for chain
   | 'menu'         // Title screen
   | 'playing'      // Active gameplay
-  | 'gameover'     // Death screen — prompt to submit score
+  | 'gameover'     // Death screen — enter alias
   | 'submitting'   // Submitting score to chain
+  | 'proving'      // Proving elite status (ZK proof in progress)
   | 'leaderboard'; // Viewing on-chain leaderboard
 
 let currentScreen: GameScreen = 'connect';

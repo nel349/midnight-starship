@@ -7,7 +7,11 @@ import { indexerPublicDataProvider } from '@midnight-ntwrk/midnight-js-indexer-p
 import { Transaction } from '@midnight-ntwrk/midnight-js-types';
 import type { FinalizedTransaction, TransactionId } from '@midnight-ntwrk/ledger-v7';
 import { toHex, fromHex } from '@midnight-ntwrk/midnight-js-utils';
-import { getNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
+import {
+  PRIVATE_STATE_PASSWORD,
+  PRIVATE_STATE_ACCOUNT_ID,
+  DEFAULT_PROVER_URI,
+} from '../config';
 
 export async function createMidnightProviders(
   wallet: WalletClient,
@@ -23,12 +27,12 @@ export async function createMidnightProviders(
 
   return {
     privateStateProvider: levelPrivateStateProvider({
-      privateStoragePasswordProvider: () => 'starship-demo-password-16chars',
-      accountId: 'starship-player',
+      privateStoragePasswordProvider: () => PRIVATE_STATE_PASSWORD,
+      accountId: PRIVATE_STATE_ACCOUNT_ID,
     }),
     zkConfigProvider,
     proofProvider: httpClientProofProvider(
-      config.proverServerUri ?? 'http://localhost:6300',
+      config.proverServerUri ?? DEFAULT_PROVER_URI,
       zkConfigProvider,
     ),
     publicDataProvider: indexerPublicDataProvider(config.indexerUri, config.indexerWsUri),
