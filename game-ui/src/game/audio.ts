@@ -13,15 +13,15 @@ function getCtx(): AudioContext {
   if (!ctx) {
     ctx = new AudioContext();
     masterGain = ctx.createGain();
-    masterGain.gain.value = 0.6;
+    masterGain.gain.value = 0.85;
     masterGain.connect(ctx.destination);
 
     musicGain = ctx.createGain();
-    musicGain.gain.value = 0.3;
+    musicGain.gain.value = 0.4;
     musicGain.connect(masterGain);
 
     sfxGain = ctx.createGain();
-    sfxGain.gain.value = 0.5;
+    sfxGain.gain.value = 0.6;
     sfxGain.connect(masterGain);
   }
   return ctx;
