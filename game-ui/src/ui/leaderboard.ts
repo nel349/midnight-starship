@@ -21,6 +21,15 @@ export function setLeaderboardData(data: { entries: LeaderboardEntry[]; topScore
   topScore = data.topScore;
 }
 
+/** Reset threshold input state. Call on screen transitions away from leaderboard. */
+export function resetThresholdInput(): void {
+  if (enteringThreshold) {
+    enteringThreshold = false;
+    thresholdBuffer = '';
+    removeThresholdListener();
+  }
+}
+
 export function showBanner(message: string, type: 'success' | 'error'): void {
   bannerMessage = message;
   bannerType = type;

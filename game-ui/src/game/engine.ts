@@ -13,7 +13,7 @@ import {
 } from './entities';
 import { renderHud } from '../ui/hud';
 import { renderConnectScreen, handleConnectInput } from '../ui/connect-screen';
-import { renderLeaderboard, handleLeaderboardInput, showBanner } from '../ui/leaderboard';
+import { renderLeaderboard, handleLeaderboardInput, showBanner, resetThresholdInput } from '../ui/leaderboard';
 import { getWalletClient } from '../providers/wallet-connector';
 import { initAudio, playShoot, playMenuSelect, playLevelStart, playScoreSubmit, startTheme, stopTheme } from './audio';
 import { renderTitle, TITLE_BOTTOM } from '../ui/title';
@@ -152,6 +152,7 @@ function gameLoop(time: number): void {
       renderLeaderboard(ctx, getScreenTimer(), dt);
       handleLeaderboardInput(input, {
         onPlayAgain: () => {
+          resetThresholdInput();
           initEntities();
           startTheme();
           playLevelStart();
