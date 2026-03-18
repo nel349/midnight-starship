@@ -68,12 +68,8 @@ export type DeployedStarshipContract = FoundContract<StarshipContract>;
  * Players may optionally reveal their score via `reveal_score`.
  */
 export type LeaderboardEntry = {
-  /** Privacy-preserving player identity (hex-encoded hash of secret key). */
   readonly playerHash: string;
-  /** Player-chosen display name. */
   readonly alias: string;
-  /** Whether this player has a score commitment on-chain. */
-  readonly hasCommitment: boolean;
   /** The player's score, or null if not yet revealed. */
   readonly revealedScore: bigint | null;
 };

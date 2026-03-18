@@ -12,7 +12,7 @@ if (typeof crypto.timingSafeEqual !== 'function') {
 import { setNetworkId, type NetworkId } from '@midnight-ntwrk/midnight-js-network-id';
 import { initEngine, setCallbacks } from './game/engine';
 import { setLeaderboardData } from './ui/leaderboard';
-import { getWalletClient } from './providers/wallet-connector';
+import { connectWallet, getWalletClient } from './providers/wallet-connector';
 import { createMidnightProviders } from './providers/midnight-providers';
 import { StarshipAPI, type DeployedStarshipAPI } from '../../api/src/index';
 import { showToast } from './ui/toast';
@@ -87,10 +87,9 @@ async function initializeAPI(): Promise<void> {
 // Boot
 initEngine();
 
-// Watch for wallet connection, then initialize API
-const checkWallet = setInterval(() => {
-  if (getWalletClient()) {
-    clearInterval(checkWallet);
-    initializeAPI();
-  }
-}, 500);
+// Connect to wallet, then initialize API
+connectWallet().then(() => initializeAPI()).catch((err) => {
+  console.error('Wallet connection failed:', err);
+  showToast('No wallet found — playing offline', 'error');
+  setTimeout(() => setScreen('menu'), 2000);
+});

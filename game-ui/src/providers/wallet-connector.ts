@@ -5,13 +5,12 @@ import { showToast } from '../ui/toast';
 let client: WalletClient | null = null;
 
 export async function connectWallet(
-  url: string = WALLET_URL,
   networkId: string = NETWORK_ID,
 ): Promise<WalletClient> {
   if (client) return client;
 
   client = await createWalletClient({
-    url,
+    url: WALLET_URL || undefined,
     networkId,
     onApprovalPending: (method) => showToast(`Awaiting approval: ${method}`, 'info'),
     onApprovalResolved: (method, result) =>

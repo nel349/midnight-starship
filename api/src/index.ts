@@ -173,7 +173,7 @@ function deriveLeaderboardState(data: Parameters<typeof ledger>[0]): Leaderboard
     const revealedScore = state.revealedScores.member(keyBytes)
       ? state.revealedScores.lookup(keyBytes)
       : null;
-    entries.push({ playerHash, alias, hasCommitment: true, revealedScore });
+    entries.push({ playerHash, alias, revealedScore });
   }
 
   // Revealed first (by score desc), then hidden (alphabetically by alias)

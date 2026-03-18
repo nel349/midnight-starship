@@ -1,11 +1,3 @@
-/*
- * Starship leaderboard private state and witness implementations.
- *
- * Private state holds:
- *   - secretKey: player identity (never disclosed on-chain)
- *   - score: the player's actual score (stored off-chain, committed on-chain as hash)
- */
-
 import { type Ledger } from './managed/starship/contract/index';
 import { type WitnessContext } from '@midnight-ntwrk/compact-runtime';
 

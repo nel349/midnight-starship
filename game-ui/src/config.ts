@@ -4,7 +4,9 @@ export const VIRTUAL_HEIGHT = 240;
 export const SCALE = 3;
 
 // Network configuration
-export const WALLET_URL = import.meta.env.VITE_WALLET_URL ?? 'ws://localhost:9932';
+// Set VITE_WALLET_URL to connect via WebSocket (midnight serve).
+// Leave unset to auto-discover the Lace browser extension.
+export const WALLET_URL = import.meta.env.VITE_WALLET_URL ?? '';
 export const NETWORK_ID = import.meta.env.VITE_NETWORK_ID ?? 'Undeployed';
 
 // Private state provider configuration
