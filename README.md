@@ -2,27 +2,96 @@
 
 ![Midnight Starship — deploying contract](docs/starship-gif-readme.gif)
 
-A Galaga-style game with a privacy-first on-chain leaderboard. Built as a reference for connecting browser DApps to the [Midnight wallet CLI](https://github.com/nel349/midnight-wallet-cli) via `midnight serve`.
+A Galaga-style game with a privacy-first on-chain leaderboard. Built as a reference for connecting browser DApps to the [Midnight wallet CLI](https://github.com/nel349/midnight-wallet-cli) via `midnight serve`. Inspired by [jwilliams219/galaga](https://github.com/jwilliams219/galaga).
 
 Scores are stored as commitment hashes — nobody can see your score unless you choose to reveal it. You can prove "my score is above X" with a zero-knowledge proof without disclosing the actual number.
 
-## Quick Start
+## Prerequisites
 
-```
-# 1. Install
+- Node.js >= 20
+- Docker (for local development)
+- [midnight-wallet-cli](https://www.npmjs.com/package/midnight-wallet-cli) — `npm install -g midnight-wallet-cli`
+
+## Getting Started — Local (undeployed)
+
+```bash
+# 1. Set up the wallet
+mn wallet generate alice
+mn config set network undeployed
+
+# 2. Start the local network (node, indexer, proof server)
+mn localnet up
+
+# 3. Fund your wallet and register dust (needed for transaction fees)
+mn airdrop 1000
+mn dust register
+
+# 4. Install dependencies and compile the contract
 npm install
-
-# 2. Compile the contract
 cd contract && npm run compact && cd ..
 
-# 3. Start the wallet (in a separate terminal)
-midnight serve --network undeployed
+# 5. Start the wallet connector (in a separate terminal)
+mn serve
 
-# 4. Start the game
-cd game-ui && npm run dev
+# 6. Build and start the game
+cd game-ui && npm run build:start:undeployed
 ```
 
-Open `http://localhost:5173`. The game connects to the wallet at `ws://localhost:9932`.
+Open `http://localhost:4173`. The game connects to the wallet at `ws://localhost:9932`.
+
+## Getting Started — Preview
+
+```bash
+# 1. Set up the wallet
+mn wallet generate alice
+mn config set network preview
+
+# 2. Get test tokens from the faucet
+#    Go to https://faucet.preview.midnight.network/
+#    Paste your address: mn wallet info alice (copy the preview address)
+
+# 3. Register dust (needed for transaction fees)
+mn dust register
+
+# 4. Install dependencies and compile the contract
+npm install
+cd contract && npm run compact && cd ..
+
+# 5. Start the wallet connector (in a separate terminal)
+mn serve
+
+# 6. Build and start the game
+cd game-ui && npm run build:start
+```
+
+Open `http://localhost:4173`. The game connects to the wallet at `ws://localhost:9932`.
+
+## Getting Started — Preprod
+
+```bash
+# 1. Set up the wallet
+mn wallet generate alice
+mn config set network preprod
+
+# 2. Get test tokens from the faucet
+#    Go to https://faucet.preprod.midnight.network/
+#    Paste your address: mn wallet info alice (copy the preprod address)
+
+# 3. Register dust (needed for transaction fees)
+mn dust register
+
+# 4. Install dependencies and compile the contract
+npm install
+cd contract && npm run compact && cd ..
+
+# 5. Start the wallet connector (in a separate terminal)
+mn serve
+
+# 6. Build and start the game
+cd game-ui && npm run build:start:preprod
+```
+
+Open `http://localhost:4173`. The game connects to the wallet at `ws://localhost:9932`.
 
 ## How It Works
 
@@ -75,7 +144,7 @@ Three circuits:
 
 ## Connecting to the Wallet
 
-The game uses [`midnight-wallet-connector`](https://github.com/nel349/midnight-wallet-cli) to talk to `midnight serve`:
+The game uses [`midnight-wallet-connector`](https://www.npmjs.com/package/midnight-wallet-connector) to talk to `midnight serve`:
 
 ```typescript
 import { createWalletClient } from 'midnight-wallet-connector';
@@ -127,14 +196,6 @@ cd contract && npm test
      ✓ multi-player > revealing one player does not reveal the other
      ...
 ```
-
-## Networks
-
-| Mode | Command | Wallet |
-|------|---------|--------|
-| Local | `npm run dev` | `midnight serve --network undeployed` |
-| Preview | `npm run dev:preview` | `midnight serve --network preview` |
-| Preprod | `npm run dev:preprod` | `midnight serve --network preprod` |
 
 ## Build
 

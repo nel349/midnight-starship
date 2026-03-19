@@ -4,9 +4,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --mode undeployed",
-    "dev:preprod": "vite --mode preprod",
-    "dev:preview": "vite --mode preview",
     "build": "rm -rf ./dist && tsc && vite build --mode preview && cp -r ../contract/src/managed/starship/keys ./dist/keys && cp -r ../contract/src/managed/starship/zkir ./dist/zkir",
     "build:undeployed": "rm -rf ./dist && tsc && vite build --mode undeployed && cp -r ../contract/src/managed/starship/keys ./dist/keys && cp -r ../contract/src/managed/starship/zkir ./dist/zkir",
     "build:preprod": "rm -rf ./dist && tsc && vite build --mode preprod && cp -r ../contract/src/managed/starship/keys ./dist/keys && cp -r ../contract/src/managed/starship/zkir ./dist/zkir",
