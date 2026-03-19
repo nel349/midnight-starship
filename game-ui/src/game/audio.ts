@@ -13,11 +13,11 @@ function getCtx(): AudioContext {
   if (!ctx) {
     ctx = new AudioContext();
     masterGain = ctx.createGain();
-    masterGain.gain.value = 0.85;
+    masterGain.gain.value = 0.95;
     masterGain.connect(ctx.destination);
 
     musicGain = ctx.createGain();
-    musicGain.gain.value = 0.4;
+    musicGain.gain.value = 0.6;
     musicGain.connect(masterGain);
 
     sfxGain = ctx.createGain();
@@ -93,39 +93,39 @@ function noise(duration: number, volume: number, dest: AudioNode, delay: number 
 // Firing torpedo — short high-pitched zap
 export function playShoot(): void {
   const dest = sfxGain ?? getCtx().destination;
-  tone(1200, 0.06, 'square', 0.12, dest, 200);
+  tone(1200, 0.06, 'square', 0.3, dest, 200);
 }
 
 // Enemy killed — descending buzz + crunch
 export function playEnemyHit(): void {
   const dest = sfxGain ?? getCtx().destination;
-  tone(300, 0.12, 'sawtooth', 0.15, dest, 60);
-  noise(0.08, 0.1, dest, 0.03);
+  tone(300, 0.12, 'sawtooth', 0.35, dest, 60);
+  noise(0.08, 0.25, dest, 0.03);
 }
 
 // Boss hurt — metallic clang
 export function playBossHurt(): void {
   const dest = sfxGain ?? getCtx().destination;
-  tone(600, 0.15, 'triangle', 0.12, dest, 300);
-  tone(150, 0.1, 'square', 0.08, dest);
+  tone(600, 0.15, 'triangle', 0.3, dest, 300);
+  tone(150, 0.1, 'square', 0.2, dest);
 }
 
 // Boss death — big explosion with descending tone
 export function playBossDeath(): void {
   const dest = sfxGain ?? getCtx().destination;
-  tone(400, 0.4, 'sawtooth', 0.2, dest, 30);
-  noise(0.35, 0.2, dest, 0.05);
-  tone(200, 0.3, 'square', 0.1, dest, 50, 0.1);
-  noise(0.25, 0.15, dest, 0.15);
+  tone(400, 0.4, 'sawtooth', 0.45, dest, 30);
+  noise(0.35, 0.4, dest, 0.05);
+  tone(200, 0.3, 'square', 0.25, dest, 50, 0.1);
+  noise(0.25, 0.3, dest, 0.15);
 }
 
 // Player death — long descending wail + explosion
 export function playPlayerDeath(): void {
   const dest = sfxGain ?? getCtx().destination;
-  tone(800, 0.5, 'sawtooth', 0.2, dest, 40);
-  tone(600, 0.4, 'square', 0.1, dest, 30, 0.05);
-  noise(0.4, 0.2, dest, 0.1);
-  noise(0.3, 0.15, dest, 0.25);
+  tone(800, 0.5, 'sawtooth', 0.45, dest, 40);
+  tone(600, 0.4, 'square', 0.25, dest, 30, 0.05);
+  noise(0.4, 0.4, dest, 0.1);
+  noise(0.3, 0.3, dest, 0.25);
 }
 
 // Enemy diving — swooping oscillation
@@ -141,7 +141,7 @@ export function playDiving(): void {
   osc.frequency.linearRampToValueAtTime(800, t + 0.15);
   osc.frequency.linearRampToValueAtTime(300, t + 0.3);
 
-  gain.gain.setValueAtTime(0.06, t);
+  gain.gain.setValueAtTime(0.15, t);
   gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
 
   osc.connect(gain);
@@ -155,24 +155,24 @@ export function playLevelStart(): void {
   const dest = sfxGain ?? getCtx().destination;
   const notes = [262, 330, 392, 523, 659, 784];
   notes.forEach((freq, i) => {
-    tone(freq, 0.15, 'square', 0.1, dest, undefined, i * 0.08);
+    tone(freq, 0.15, 'square', 0.25, dest, undefined, i * 0.08);
   });
 }
 
 // Menu select — two quick chirps
 export function playMenuSelect(): void {
   const dest = sfxGain ?? getCtx().destination;
-  tone(660, 0.05, 'square', 0.08, dest);
-  tone(880, 0.08, 'square', 0.08, dest, undefined, 0.06);
+  tone(660, 0.05, 'square', 0.2, dest);
+  tone(880, 0.08, 'square', 0.2, dest, undefined, 0.06);
 }
 
 // Score submit success — triumphant ascending
 export function playScoreSubmit(): void {
   const dest = sfxGain ?? getCtx().destination;
-  tone(523, 0.12, 'square', 0.1, dest);
-  tone(659, 0.12, 'square', 0.1, dest, undefined, 0.12);
-  tone(784, 0.12, 'square', 0.1, dest, undefined, 0.24);
-  tone(1047, 0.25, 'triangle', 0.12, dest, undefined, 0.36);
+  tone(523, 0.12, 'square', 0.25, dest);
+  tone(659, 0.12, 'square', 0.25, dest, undefined, 0.12);
+  tone(784, 0.12, 'square', 0.25, dest, undefined, 0.24);
+  tone(1047, 0.25, 'triangle', 0.3, dest, undefined, 0.36);
 }
 
 // ── Theme music — looping Galaga-style melody ──
@@ -226,23 +226,23 @@ export function startTheme(): void {
     // Melody voice
     const melodyNote = MELODY[idx];
     if (melodyNote > 0) {
-      tone(melodyNote, stepDuration * 0.8, 'square', 0.08, dest);
+      tone(melodyNote, stepDuration * 0.8, 'square', 0.2, dest);
     }
 
     // Bass voice
     const bassNote = BASS[idx];
     if (bassNote > 0) {
-      tone(bassNote, stepDuration * 1.5, 'triangle', 0.1, dest);
+      tone(bassNote, stepDuration * 1.5, 'triangle', 0.25, dest);
     }
 
     // Hi-hat on every other step
     if (themeStep % 2 === 0) {
-      noise(0.03, 0.03, dest);
+      noise(0.03, 0.08, dest);
     }
 
     // Kick on every 4th step
     if (themeStep % 4 === 0) {
-      tone(60, 0.1, 'sine', 0.12, dest, 30);
+      tone(60, 0.1, 'sine', 0.25, dest, 30);
     }
 
     themeStep++;
