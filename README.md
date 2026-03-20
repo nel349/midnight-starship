@@ -2,7 +2,7 @@
 
 ![Midnight Starship — deploying contract](docs/starship-gif-readme.gif)
 
-A Galaga-style game with a privacy-first on-chain leaderboard. Built as a reference for connecting browser DApps to the [Midnight wallet CLI](https://github.com/nel349/midnight-wallet-cli) via `midnight serve`. Inspired by [jwilliams219/galaga](https://github.com/jwilliams219/galaga).
+A Galaga-style game with a privacy-first on-chain leaderboard. Built as a reference for connecting browser DApps to the [Midnight wallet CLI](https://github.com/nel349/midnight-wallet-cli-hub) via `midnight serve`. Inspired by [jwilliams219/galaga](https://github.com/jwilliams219/galaga).
 
 Scores are stored as commitment hashes — nobody can see your score unless you choose to reveal it. You can prove "my score is above X" with a zero-knowledge proof without disclosing the actual number.
 
