@@ -5,7 +5,7 @@ import { FetchZkConfigProvider } from '@midnight-ntwrk/midnight-js-fetch-zk-conf
 import { httpClientProofProvider } from '@midnight-ntwrk/midnight-js-http-client-proof-provider';
 import { indexerPublicDataProvider } from '@midnight-ntwrk/midnight-js-indexer-public-data-provider';
 import { Transaction } from '@midnight-ntwrk/midnight-js-types';
-import type { FinalizedTransaction, TransactionId } from '@midnight-ntwrk/ledger-v7';
+import type { FinalizedTransaction, TransactionId } from '@midnight-ntwrk/ledger-v8';
 import { toHex, fromHex } from '@midnight-ntwrk/midnight-js-utils';
 import {
   PRIVATE_STATE_PASSWORD,

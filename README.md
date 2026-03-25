@@ -10,6 +10,7 @@ Scores are stored as commitment hashes — nobody can see your score unless you 
 
 - Node.js >= 20
 - Docker (for local development)
+- [Compact compiler](https://docs.midnight.network/getting-started/installation) — follow the Midnight installation guide
 - [midnight-wallet-cli](https://www.npmjs.com/package/midnight-wallet-cli) — `npm install -g midnight-wallet-cli`
 
 ## Getting Started — Local (undeployed)
