@@ -1,3 +1,10 @@
+// Compiled contract setup for the ownership-test contract.
+//
+// Note: `as any` casts are required because the generated Contract type
+// uses `undefined` for private state, which doesn't satisfy the generic
+// constraints of CompiledContract.make/withWitnesses/withCompiledFileAssets.
+// This is a known SDK ergonomics issue with minimal contracts.
+
 import { CompiledContract } from '@midnight-ntwrk/compact-js';
 import * as OwnershipContract from './managed/ownership-test/contract/index.js';
 import { witnesses } from './witnesses.js';

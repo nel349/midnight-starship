@@ -1,5 +1,11 @@
 // Minimal contract for testing ownPublicKey() ownership during dust sponsorship.
-// Records the caller's ZswapCoinPublicKey on-chain.
+//
+// Records the caller's ZswapCoinPublicKey on-chain. If dust sponsorship
+// works correctly, this value matches the app wallet (proof generator),
+// NOT the sponsor wallet (dust payer).
+//
+// Note: local_nonce() witness exists only to satisfy the SDK's private state
+// requirement. The circuit doesn't use its value — ownPublicKey() is built-in.
 
 import CompactStandardLibrary;
 

@@ -1,15 +1,18 @@
 /**
  * Dust Sponsorship Verification Test
  *
- * Proves that ownPublicKey() is set at ZK proof generation time, NOT at
- * dust balancing or submission time. A sponsor wallet can pay dust fees
- * for another wallet's transaction without changing ownership.
+ * Proves that ownPublicKey() is determined at ZK proof generation time,
+ * NOT at dust balancing or submission time. This means:
  *
- * Based on bochaco's confirmed flow:
- * 1. App wallet builds UnboundTransaction (runs circuit, generates ZK proof)
- * 2. Sponsor calls balanceUnboundTransaction with tokenKindsToBalance: ["dust"]
- * 3. Sponsor calls finalizeRecipe
- * 4. App wallet submits the finalized tx (no signRecipe needed from sponsor)
+ *   - Wallet A (the app) generates the proof → owns the transaction
+ *   - Wallet B (the sponsor) pays the dust fees → does NOT become owner
+ *   - On-chain, ownPublicKey() returns wallet A's key
+ *
+ * Based on bochaco's confirmed flow (Midnight Discord, 2026-03-27):
+ *   1. App wallet builds UnboundTransaction (circuit + ZK proof)
+ *   2. Sponsor calls balanceUnboundTransaction({ tokenKindsToBalance: ["dust"] })
+ *   3. Sponsor calls finalizeRecipe (no signRecipe needed)
+ *   4. App wallet submits the finalized transaction
  *
  * Requires: midnight localnet up (node:9944, indexer:8088, proof-server:6300)
  */
@@ -26,13 +29,25 @@ import {
 } from '@midnight-ntwrk/testkit-js';
 import { deployContract } from '@midnight-ntwrk/midnight-js-contracts';
 import { setNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
+import type { UnboundTransaction } from '@midnight-ntwrk/wallet-sdk-capabilities/proving';
 import { compiledOwnershipContract, createInitialPrivateState, ledger } from '../contract/src/index.js';
+
+// ── Constants ──
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 
-const logger = createLogger(
-  path.resolve(currentDir, '..', 'logs', `dust-sponsorship_${new Date().toISOString()}.log`),
-);
+/** Pre-funded genesis seeds on localnet */
+const APP_SEED = '0000000000000000000000000000000000000000000000000000000000000001';
+const SPONSOR_SEED = '0000000000000000000000000000000000000000000000000000000000000002';
+
+/** Wait for block confirmation before reading ledger state */
+const BLOCK_CONFIRMATION_MS = 15_000;
+
+/** Transaction time-to-live */
+const TX_TTL_MS = 60 * 60 * 1000; // 1 hour
+
+/** Sentinel error thrown to intercept the unbound tx before balancing */
+const CAPTURE_SENTINEL = '__DUST_SPONSORSHIP_CAPTURE__';
 
 const envConfig: EnvironmentConfiguration = {
   walletNetworkId: 'undeployed' as any,
@@ -55,106 +70,104 @@ class OwnershipTestConfig implements ContractConfiguration {
   }
 }
 
-// Two pre-funded seeds on localnet
-const APP_SEED = '0000000000000000000000000000000000000000000000000000000000000001';
-const SPONSOR_SEED = '0000000000000000000000000000000000000000000000000000000000000002';
+const logger = createLogger(
+  path.resolve(currentDir, '..', 'logs', `dust-sponsorship_${new Date().toISOString()}.log`),
+);
+
+// ── Test ──
 
 describe('Dust Sponsorship', () => {
-  let walletA: MidnightWalletProvider; // app wallet (owns the tx)
-  let walletB: MidnightWalletProvider; // sponsor wallet (pays dust)
+  let appWallet: MidnightWalletProvider;
+  let sponsorWallet: MidnightWalletProvider;
 
   beforeAll(async () => {
     setNetworkId('undeployed');
 
-    walletA = await MidnightWalletProvider.build(logger, envConfig, APP_SEED);
-    walletB = await MidnightWalletProvider.build(logger, envConfig, SPONSOR_SEED);
+    appWallet = await MidnightWalletProvider.build(logger, envConfig, APP_SEED);
+    sponsorWallet = await MidnightWalletProvider.build(logger, envConfig, SPONSOR_SEED);
 
-    await walletA.start(true);
-    await walletB.start(true);
+    await appWallet.start(true);
+    await sponsorWallet.start(true);
   }, 120_000);
 
   afterAll(async () => {
-    await walletA?.stop();
-    await walletB?.stop();
+    await appWallet?.stop();
+    await sponsorWallet?.stop();
   });
 
   test('ownPublicKey matches app wallet, not sponsor wallet', async () => {
+    // ── Step 1: Deploy contract (app wallet pays) ──
     const contractConfig = new OwnershipTestConfig();
-    const providersA = initializeMidnightProviders(walletA, envConfig, contractConfig);
+    const appProviders = initializeMidnightProviders(appWallet, envConfig, contractConfig);
 
-    // Step 1: Deploy contract with wallet A
-    const deployed = await (deployContract as any)(providersA, {
+    const deployed = await (deployContract as any)(appProviders, {
       compiledContract: compiledOwnershipContract,
       privateStateId: 'ownership-test',
       initialPrivateState: createInitialPrivateState(),
     });
-    const contractAddress = deployed.deployTxData.public.contractAddress;
-    console.log('Contract deployed at:', contractAddress);
+    const contractAddress: string = deployed.deployTxData.public.contractAddress;
 
-    // Step 2: Intercept the unbound tx from callTx
-    let capturedTx: any = null;
-    providersA.walletProvider.balanceTx = async (tx: any) => {
+    // ── Step 2: App calls circuit — intercept unbound tx before balancing ──
+    //
+    // The callTx pipeline: circuit execution → ZK proof → balanceTx → submit.
+    // We override balanceTx to capture the UnboundTransaction after the proof
+    // is generated but before any dust is added.
+    let capturedTx: UnboundTransaction | null = null;
+    appProviders.walletProvider.balanceTx = async (tx: UnboundTransaction) => {
       capturedTx = tx;
-      throw new Error('__CAPTURED__');
+      throw new Error(CAPTURE_SENTINEL);
     };
 
     try {
       await deployed.callTx.record_caller();
     } catch (e: any) {
-      if (!e.message.includes('__CAPTURED__')) {
-        throw e; // Re-throw unexpected errors
-      }
+      if (!e.message.includes(CAPTURE_SENTINEL)) throw e;
     }
     expect(capturedTx).not.toBeNull();
-    console.log('Captured unbound tx from wallet A');
 
-    // Step 3: Sponsor (wallet B) balances with dust only
-    const recipe = await walletB.wallet.balanceUnboundTransaction(
-      capturedTx,
+    // ── Step 3: Sponsor balances with dust only ──
+    const recipe = await sponsorWallet.wallet.balanceUnboundTransaction(
+      capturedTx!,
       {
-        shieldedSecretKeys: walletB.zswapSecretKeys,
-        dustSecretKey: walletB.dustSecretKey,
+        shieldedSecretKeys: sponsorWallet.zswapSecretKeys,
+        dustSecretKey: sponsorWallet.dustSecretKey,
       },
       {
         tokenKindsToBalance: ['dust'],
-        ttl: new Date(Date.now() + 60 * 60 * 1000),
+        ttl: new Date(Date.now() + TX_TTL_MS),
       },
     );
-    console.log('Sponsor balanced with dust');
 
-    // Step 4: Sponsor finalizes (no signRecipe needed per bochaco)
-    const finalized = await walletB.wallet.finalizeRecipe(recipe);
-    console.log('Recipe finalized by sponsor');
+    // ── Step 4: Sponsor finalizes (no signRecipe needed) ──
+    const finalized = await sponsorWallet.wallet.finalizeRecipe(recipe);
 
-    // Step 5: App wallet submits
-    await walletA.wallet.submitTransaction(finalized);
-    console.log('Transaction submitted by app wallet');
+    // ── Step 5: App wallet submits ──
+    await appWallet.wallet.submitTransaction(finalized);
 
-    // Wait for block confirmation
-    console.log('Waiting for block confirmation...');
-    await new Promise(resolve => setTimeout(resolve, 15_000));
+    // ── Step 6: Wait for confirmation, read on-chain state ──
+    await new Promise(resolve => setTimeout(resolve, BLOCK_CONFIRMATION_MS));
 
-    // Step 6: Read on-chain state
-    const contractState = await providersA.publicDataProvider.queryContractState(contractAddress);
-    if (!contractState) throw new Error('Contract state not found');
+    const contractState = await appProviders.publicDataProvider.queryContractState(contractAddress);
+    if (!contractState) throw new Error('Contract state not found after submission');
     const state = ledger(contractState.data);
-    const recordedCaller = state.recorded_caller;
+    const recordedHex = Buffer.from(state.recorded_caller.bytes).toString('hex');
 
-    // Step 7: Assert ownership
-    const walletACoinPK = walletA.getCoinPublicKey();
-    const walletBCoinPK = walletB.getCoinPublicKey();
-    const recordedHex = Buffer.from(recordedCaller.bytes).toString('hex');
+    // ── Step 7: Assert ownership ──
+    const appCoinPK = appWallet.getCoinPublicKey();
+    const sponsorCoinPK = sponsorWallet.getCoinPublicKey();
 
     console.log('');
     console.log('=== DUST SPONSORSHIP RESULT ===');
-    console.log('Recorded caller:', recordedHex);
-    console.log('Wallet A (app):    ', walletACoinPK);
-    console.log('Wallet B (sponsor):', walletBCoinPK);
-    console.log('Match app wallet:  ', recordedHex === walletACoinPK);
-    console.log('Match sponsor:     ', recordedHex === walletBCoinPK);
+    console.log(`  recorded_caller: ${recordedHex}`);
+    console.log(`  app wallet PK:   ${appCoinPK}`);
+    console.log(`  sponsor PK:      ${sponsorCoinPK}`);
+    console.log(`  match app:       ${recordedHex === appCoinPK}`);
+    console.log(`  match sponsor:   ${recordedHex === sponsorCoinPK}`);
     console.log('');
 
-    expect(recordedHex).toBe(walletACoinPK);
-    expect(recordedHex).not.toBe(walletBCoinPK);
+    // ownPublicKey() was set when the app wallet generated the ZK proof.
+    // The sponsor only added dust — ownership is unchanged.
+    expect(recordedHex).toBe(appCoinPK);
+    expect(recordedHex).not.toBe(sponsorCoinPK);
   }, 300_000);
 });
