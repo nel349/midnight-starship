@@ -11,7 +11,8 @@
     "contract",
     "api",
     "game-ui",
-    "test"
+    "test",
+    "exercises/dust-sponsorship"
   ],
   "dependencies": {
     "@midnight-ntwrk/compact-runtime": "0.15.0",

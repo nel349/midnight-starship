@@ -1,0 +1,10 @@
+{
+  "name": "@midnight-starship/dust-sponsorship-contract",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "compact": "compact compile src/ownership-test.compact ./src/managed/ownership-test",
+    "build": "echo 'compile with: npm run compact'"
+  }
+}

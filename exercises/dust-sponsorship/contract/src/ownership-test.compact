@@ -1,0 +1,13 @@
+// Minimal contract for testing ownPublicKey() ownership during dust sponsorship.
+// Records the caller's ZswapCoinPublicKey on-chain.
+
+import CompactStandardLibrary;
+
+export ledger recorded_caller: ZswapCoinPublicKey;
+
+witness local_nonce(): Bytes<32>;
+
+export circuit record_caller(): [] {
+  local_nonce();
+  recorded_caller = ownPublicKey();
+}

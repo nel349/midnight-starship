@@ -1,0 +1,17 @@
+{
+  "name": "@midnight-starship/dust-sponsorship",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "compact": "cd contract && npm run compact",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "build": "echo 'no build needed — run compact first, then test'"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.0"
+  }
+}
